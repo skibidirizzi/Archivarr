@@ -12,7 +12,8 @@ import httpx
 import requests
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from app_config import AppConfig, LidarrServiceConfig, SonarrServiceConfig, RadarrServiceConfig
@@ -79,6 +80,11 @@ try:
     LOGS_DIR.mkdir(parents=True, exist_ok=True)
 except Exception as e:
     print(f"Warning: Failed to create logs directory: {e}")
+
+# Setup frontend static files serving
+UI_DIST_DIR = APP_DIR / "ui" / "dist"
+if UI_DIST_DIR.exists():
+    app.mount("/assets", StaticFiles(directory=UI_DIST_DIR / "assets"), name="assets")
 
 
 # ------------------------------------------------------------------------------
@@ -1516,6 +1522,12 @@ def move_job(cfg: AppConfig, move_id: str) -> None:
 
 @app.get("/", include_in_schema=False)
 def root():
+    """Serve the built React frontend if available, otherwise show info page."""
+    index_path = UI_DIST_DIR / "index.html"
+    if index_path.exists():
+        return FileResponse(index_path, media_type="text/html")
+    
+    # Fallback info page if frontend not built
     return HTMLResponse("""
     <html>
       <head>
@@ -1531,13 +1543,14 @@ def root():
       <body>
         <div class="card">
           <h2>Archivarr</h2>
-                    <p class="muted">Multi-service Archiver (Lidarr / Sonarr / Radarr)</p>
+          <p class="muted">Multi-service Archiver (Lidarr / Sonarr / Radarr)</p>
+          <p class="muted">✓ Frontend is not built. Run <code>npm run build</code> in the <code>ui/</code> directory.</p>
           <ul>
             <li><a href="/docs">API Docs</a></li>
             <li><a href="/api/v1/health">Health</a></li>
             <li><a href="/api/v1/config">Config</a></li>
           </ul>
-                    <p class="muted">Lidarr missing gate: albums in <code>/api/v1/wanted/missing</code> do not block archiving.</p>
+          <p class="muted">Lidarr missing gate: albums in <code>/api/v1/wanted/missing</code> do not block archiving.</p>
         </div>
       </body>
     </html>
@@ -2874,6 +2887,22 @@ def api_archive_radarr(movie_id: int):
         persist_activity()
         _move_log(f"ERROR: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# SPA catch-all route - must be registered AFTER all API routes
+@app.get("/{full_path:path}", include_in_schema=False)
+def spa_catch_all(full_path: str):
+    """
+    Catch-all route for SPA routing. Serves index.html for all unmatched routes
+    to allow React Router to handle client-side navigation.
+    """
+    # Redirect to root if frontend is built
+    index_path = UI_DIST_DIR / "index.html"
+    if index_path.exists() and not full_path.startswith("api/"):
+        return FileResponse(index_path, media_type="text/html")
+    
+    # 404 for unmatched API routes
+    raise HTTPException(status_code=404, detail=f"Not found: {full_path}")
 
 
 if __name__ == "__main__":

@@ -11,3 +11,10 @@ __pycache__/
 
 # Virtual env
 .venv/
+# Frontend build artifacts
+ui/dist/
+ui/node_modules/
+
+# IDE
+.vscode/
+.DS_Store
