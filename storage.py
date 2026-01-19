@@ -1,4 +1,4 @@
-"""Data persistence utilities for configuration and run tracking."""
+"""Data persistence utilities for configuration and scan/move activity tracking."""
 
 import configparser
 import json

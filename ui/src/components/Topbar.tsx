@@ -1,87 +1,76 @@
 import { useEffect, useState } from "react";
 import { StatusChip } from "./StatusChip";
 
-type Chip = { ok: boolean; text: string };
+type Chip = { ok: boolean; text: string; url?: string };
 
 type ApiStatus = {
   lidarr?: {
     connected?: boolean;
     version?: string;
+    url?: string;
+    disabled?: boolean;
+  };
+  sonarr?: {
+    connected?: boolean;
+    version?: string;
+    url?: string;
+    disabled?: boolean;
+  };
+  radarr?: {
+    connected?: boolean;
+    version?: string;
+    url?: string;
+    disabled?: boolean;
   };
   scheduler?: {
     enabled?: boolean;
   };
-  lastRun?: number | null;
+  lastActivity?: number | null;
 };
 
 type Status = {
   lidarr: Chip;
-  last_run: Chip;
+  sonarr: Chip;
+  radarr: Chip;
+  last_activity: Chip;
 };
 
 export function Topbar() {
   const [status, setStatus] = useState<Status>({
-    lidarr: { ok: false, text: "Lidarr: —" },
-    last_run: { ok: true, text: "Last Run: —" },
+    lidarr: { ok: false, text: "Lidarr: —", url: undefined },
+    sonarr: { ok: false, text: "Sonarr: —", url: undefined },
+    radarr: { ok: false, text: "Radarr: —", url: undefined },
+    last_activity: { ok: true, text: "Last Activity: —" },
   });
   const [running, setRunning] = useState(false);
-  const [runId, setRunId] = useState<string | null>(null);
-  const [runStatus, setRunStatus] = useState<'idle' | 'queued' | 'running' | 'complete' | 'error'>('idle');
+  const [scanStatus, setScanStatus] = useState<'idle' | 'running' | 'complete' | 'error'>('idle');
 
-  const handleRun = async () => {
+  const handleScan = async () => {
     setRunning(true);
     try {
-      const r = await fetch('/api/v1/run', { method: 'POST' });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const j = await r.json();
-      setRunId(j.runId);
-      setRunStatus('queued');
+      const r = await fetch('/api/v1/scan', { method: 'POST' });
+      if (!r.ok) {
+        const text = await r.text();
+        let detail: string | null = null;
+        try {
+          const j = text ? JSON.parse(text) : null;
+          detail = (j && (j.detail || j.error || j.message)) || null;
+        } catch {
+          // ignore
+        }
+        const snippet = (text || '').trim().slice(0, 200);
+        throw new Error(detail ?? (snippet ? `HTTP ${r.status}: ${snippet}` : `HTTP ${r.status}`));
+      }
+      setScanStatus('complete');
+      alert('Scan complete. Check the Jobs page to review and execute archive operations.');
+      // Refresh page to reflect updated scan results
+      window.location.reload();
     } catch (e) {
-      alert('Error starting run: ' + (e as Error).message);
+      alert('Error scanning for eligible items: ' + (e as Error).message);
+      setScanStatus('error');
       setRunning(false);
     }
   };
-
-  useEffect(() => {
-    if (!runId) return;
-    const poll = async () => {
-      try {
-        const r = await fetch(`/api/v1/run/${runId}`);
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const data = await r.json();
-        setRunStatus(data.status);
-        if (data.status === 'complete' || data.status === 'error') {
-          setRunId(null);
-          setRunning(false);
-          // Refresh status to update lastRun
-          const statusR = await fetch("/api/v1/status");
-          const statusJ: ApiStatus = await statusR.json();
-          const lidarrOk = !!statusJ?.lidarr?.connected;
-          setStatus({
-            lidarr: {
-              ok: lidarrOk,
-              text: lidarrOk
-                ? `Lidarr: Connected`
-                : `Lidarr: Disconnected`,
-            },
-            last_run: {
-              ok: true,
-              text: statusJ?.lastRun
-                ? `Last Run: ${new Date(statusJ.lastRun * 1000).toLocaleString()}`
-                : "Last Run: —",
-            },
-          });
-        }
-      } catch (e) {
-        console.error('Error polling run status:', e);
-        setRunStatus('error');
-        setRunId(null);
-      }
-    };
-    poll();
-    const t = setInterval(poll, 2000);
-    return () => clearInterval(t);
-  }, [runId]);
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -90,25 +79,50 @@ export function Topbar() {
         const j: ApiStatus = await r.json();
 
         const lidarrOk = !!j?.lidarr?.connected;
+        const sonarrOk = !!j?.sonarr?.connected;
+        const radarrOk = !!j?.radarr?.connected;
 
         setStatus({
           lidarr: {
             ok: lidarrOk,
-            text: lidarrOk
+            text: j?.lidarr?.disabled
+              ? `Lidarr: Disabled`
+              : lidarrOk
               ? `Lidarr: Connected`
               : `Lidarr: Disconnected`,
+            url: j?.lidarr?.url,
           },
-          last_run: {
+          sonarr: {
+            ok: sonarrOk,
+            text: j?.sonarr?.disabled
+              ? `Sonarr: Disabled`
+              : sonarrOk
+              ? `Sonarr: Connected`
+              : `Sonarr: Disconnected`,
+            url: j?.sonarr?.url,
+          },
+          radarr: {
+            ok: radarrOk,
+            text: j?.radarr?.disabled
+              ? `Radarr: Disabled`
+              : radarrOk
+              ? `Radarr: Connected`
+              : `Radarr: Disconnected`,
+            url: j?.radarr?.url,
+          },
+          last_activity: {
             ok: true,
-            text: j?.lastRun
-              ? `Last Run: ${new Date(j.lastRun * 1000).toLocaleString()}`
-              : "Last Run: —",
+            text: j?.lastActivity
+              ? `Last Activity: ${new Date(j.lastActivity * 1000).toLocaleString()}`
+              : "Last Activity: —",
           },
         });
       } catch {
         setStatus({
           lidarr: { ok: false, text: "Lidarr: Unknown" },
-          last_run: { ok: true, text: "Last Run: —" },
+          sonarr: { ok: false, text: "Sonarr: Unknown" },
+          radarr: { ok: false, text: "Radarr: Unknown" },
+          last_activity: { ok: true, text: "Last Activity: —" },
         });
       }
     };
@@ -122,19 +136,36 @@ export function Topbar() {
     <header className="topbar">
       <div className="topbarLeft">
         <div className="title">Archivarr</div>
-        <div className="subtitle">Cutoff Archiver</div>
+        <div className="subtitle">Multi-service Archiver</div>
       </div>
 
       <div className="topbarRight">
-        <button className="btn" onClick={handleRun} disabled={running || runStatus === 'queued' || runStatus === 'running'}>
-          {running ? 'Starting...' : 'Run Scan'}
+        <button className="btn" onClick={handleScan} disabled={running}>
+          {running ? 'Scanning...' : 'Scan for Eligible'}
         </button>
         <StatusChip
-          ok={runStatus === 'complete' || runStatus === 'idle'}
-          text={`Run: ${runStatus.charAt(0).toUpperCase() + runStatus.slice(1)}`}
+          ok={scanStatus === 'complete' || scanStatus === 'idle'}
+          text={`Scan: ${scanStatus.charAt(0).toUpperCase() + scanStatus.slice(1)}`}
         />
-        <StatusChip ok={status.lidarr.ok} text={status.lidarr.text} />
-        <StatusChip ok={status.last_run.ok} text={status.last_run.text} />
+        <StatusChip 
+          ok={status.lidarr.ok} 
+          text={status.lidarr.text} 
+          logo="https://lidarr.audio/img/logo.png"
+          href={status.lidarr.url}
+        />
+        <StatusChip 
+          ok={status.sonarr.ok} 
+          text={status.sonarr.text} 
+          logo="https://sonarr.tv/img/logo.png"
+          href={status.sonarr.url}
+        />
+        <StatusChip 
+          ok={status.radarr.ok} 
+          text={status.radarr.text} 
+          logo="https://radarr.video/img/logo.png"
+          href={status.radarr.url}
+        />
+        <StatusChip ok={status.last_activity.ok} text={status.last_activity.text} />
       </div>
     </header>
   );

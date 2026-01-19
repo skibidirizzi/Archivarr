@@ -231,3 +231,72 @@ body {
 .tablePlaceholder {
   padding: 18px;
 }
+.serviceSection {
+  margin-top: 24px;
+}
+
+.serviceSection h2 {
+  margin: 0 0 12px 0;
+  font-size: 18px;
+  letter-spacing: 0.2px;
+}
+
+.sonarrSection {
+  background: #2B3142;
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.sonarrSection h2 {
+  color: #2393B3;
+}
+
+.sonarrSection .card {
+  background: rgba(58, 64, 83, 0.6);
+  border: 1px solid rgba(35, 147, 179, 0.3);
+}
+
+.sonarrSection .card:hover {
+  border-color: rgba(35, 147, 179, 0.5);
+  background: rgba(58, 64, 83, 0.8);
+}
+
+.lidarrSection {
+  background: #263A32;
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.lidarrSection h2 {
+  color: #00A65A;
+}
+
+.lidarrSection .card {
+  background: rgba(30, 111, 75, 0.6);
+  border: 1px solid rgba(0, 166, 90, 0.3);
+}
+
+.lidarrSection .card:hover {
+  border-color: rgba(0, 166, 90, 0.5);
+  background: rgba(30, 111, 75, 0.8);
+}
+
+.radarrSection {
+  background: #8A6E00;
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.radarrSection h2 {
+  color: #F5C518;
+}
+
+.radarrSection .card {
+  background: rgba(201, 161, 10, 0.6);
+  border: 1px solid rgba(245, 197, 24, 0.3);
+}
+
+.radarrSection .card:hover {
+  border-color: rgba(245, 197, 24, 0.5);
+  background: rgba(201, 161, 10, 0.8);
+}

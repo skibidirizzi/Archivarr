@@ -80,7 +80,7 @@ export function LogsPage() {
         <div className="panelHeader">
           <div>
             <div className="panelTitle">Live Logs</div>
-            <div className="panelSub">Current run and recent activity</div>
+            <div className="panelSub">Current scan/move and recent activity</div>
           </div>
         </div>
 
@@ -102,7 +102,7 @@ export function LogsPage() {
             }}
           >
             {logs.length === 0 ? (
-              <div className="muted">No logs yet. Run a scan to see activity.</div>
+              <div className="muted">No logs yet. Start a scan to see activity.</div>
             ) : (
               logs.map((message, idx) => (
                 <div key={idx} style={{ lineHeight: 1.6 }}>

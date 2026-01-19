@@ -1,0 +1,13 @@
+# Local config (contains secrets)
+config.ini
+
+# Runtime data/logs (machine-specific)
+data/
+logs/
+
+# Python bytecode / caches
+__pycache__/
+*.pyc
+
+# Virtual env
+.venv/

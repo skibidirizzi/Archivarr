@@ -12,6 +12,8 @@
   "devDependencies": {
     "@tsconfig/svelte": "^5.0.6",
     "@types/node": "^24.10.1",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
     "svelte": "^5.43.8",
     "svelte-check": "^4.3.4",
     "typescript": "~5.9.3",
@@ -19,6 +21,8 @@
   },
   "dependencies": {
     "@vitejs/plugin-react": "^5.1.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "react-router-dom": "^7.12.0"
   }
 }

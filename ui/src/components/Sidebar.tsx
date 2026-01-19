@@ -3,7 +3,7 @@ import smLogo from "../assets/smlogo.png";
 
 const navItems = [
   { to: "/", label: "Dashboard" },
-  { to: "/jobs", label: "Cutoff Jobs" },
+  { to: "/jobs", label: "Archive Jobs" },
   { to: "/history", label: "History" },
   { to: "/logs", label: "Logs" },
   { to: "/settings", label: "Settings" },
