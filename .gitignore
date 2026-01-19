@@ -15,6 +15,16 @@ __pycache__/
 ui/dist/
 ui/node_modules/
 
+# PyInstaller build artifacts
+build/
+dist/
+*.egg-info/
+*.spec.bak
+
+# Installers
+*.exe
+*.msi
+
 # IDE
 .vscode/
 .DS_Store
